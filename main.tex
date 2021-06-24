@@ -1,0 +1,71 @@
+\documentclass{article}
+\usepackage[final]{neurips_2020}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+
+\usepackage[pdftex]{graphicx} % include images
+\usepackage{amsmath}          % for multi-line equations
+\usepackage{bbm}              % for the indicator function \bbm{1}
+\usepackage{multirow}         % for multi-row table cells
+\usepackage{subcaption}       % for subfigures
+\usepackage{pgffor}           % for the \foreach loop
+\usepackage{ifthen}           % for the \ifthenelse statement
+
+\setcitestyle{numbers,square}
+\bibliographystyle{plainnat}
+
+% Common values referred throughout the text
+\newcommand{\defmoepochs}{7}
+\newcommand{\oursepochs}{4}
+\newcommand{\defmobatchsize}{24}
+\newcommand{\oursbatchsize}{9}
+
+\title{Improving DeFMO With Learned Losses}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+\author{%
+    Harish Rajagopal \\
+    Computer Science MSc \\
+    ETH Zürich \\
+    20-946-349 \\%chktex 8
+    \AND%
+    Denys Rozumnyi \\
+    Co-Supervisor \\
+    Department of Computer Science \\
+    ETH Zürich \\
+    \And%
+    Prof.\ Dr.\ Marc Pollefeys \\
+    Supervisor \\
+    Department of Computer Science \\
+    ETH Zürich
+}
+
+\begin{document}
+
+\maketitle
+
+\input{sections/abstract.tex}
+\input{sections/intro.tex}
+\input{sections/baseline.tex}
+\input{sections/approach.tex}
+\input{sections/experiments.tex}
+\input{sections/results.tex}
+\input{sections/conclusion.tex}
+
+\small
+\bibliography{references}
+
+\end{document}

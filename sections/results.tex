@@ -1,0 +1,136 @@
+\newcommand{\samples}[2]{%
+    \begin{figure}
+        \centering
+
+        \begin{subfigure}{0.19\textwidth}
+            \includegraphics[height=\textwidth,width=\textwidth]{images/results/#1.jpg}
+            \caption*{Input}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}{0.79\textwidth}
+            \setlength{\abovecaptionskip}{1mm}
+            \foreach [count=\i from 1] \method/\name in {GT/gt,DeFMO/old,Ours/new}{%chktex 1
+                \begin{subfigure}{\textwidth}
+                    \rotatebox{90}{\method}
+                    \foreach \j in {0,...,7}{%chktex 1,chktex 11
+                        \includegraphics[height=0.11\textwidth,width=0.11\textwidth]{images/results/\name/#1-\j.jpg}%
+                        \ifthenelse{\equal{\j}{7}}{}{\hfill}%
+                    }
+                \end{subfigure}%
+                \ifthenelse{\equal{\i}{3}}{}{\vspace{1mm}}
+            }
+            \caption*{Output}
+        \end{subfigure}
+
+        \caption{Sample outputs on the #2 dataset.}%
+        \label{fig:#1-samples}
+    \end{figure}
+}
+
+\section{Results}
+
+\subsection{Benchmark results}
+    The FMO deblurring benchmark evaluates the models using peak signal-to-noise ratio (PSNR), structural similarity index measure~\citep{ssim} (SSIM), and intersection over union averaged over the trajectory~\citep{tiou} (TIoU).
+    Here, both methods use a median of the previous five frames as the background.
+    The results for this benchmark are shown in Table~\ref{tab:benchmark}.
+    Image samples on the Falling Objects, TbD-3D and TbD datasets are shown in figures \ref{fig:falling-objs-samples}, \ref{fig:tbd-3d-samples} and \ref{fig:tbd-samples} respectively.%chktex 2
+
+    % TODO:
+    % * Specify that this is the re-implemented DeFMO
+    % * Specify metrics for original DeFMO
+    % * Do ablation study
+    \begin{table}
+        \caption{
+            Evaluation on the FMO deblurring benchmark.
+            The datasets are sorted top-to-bottom by decreasing difficulty: arbitrary shaped and textured~\citep{falling-objs}, mostly spherical but textured~\citep{tbd-3d}, and mostly spherical and uniformly coloured objects~\citep{tbd}.
+        }%
+        \label{tab:benchmark}
+        \centering
+        \begin{tabular}{llrr}
+            \toprule
+            \multirow{2}[2]{*}{Dataset} & \multirow{2}[2]{*}{Metric} & \multicolumn{2}{c}{Approach}\\
+            \cmidrule(lr){3-4}
+            && DeFMO & Ours\\
+            \midrule
+            \multirow{3}{*}{Falling Objects} & TIoU $\uparrow$ & 0.000 & 0.000\\
+            & PSNR $\uparrow$ & \textbf{22.794} & 22.064\\
+            & SSIM $\uparrow$ & \textbf{0.608} & 0.604\\
+            \midrule
+            \multirow{3}{*}{TbD-3D} & TIoU $\uparrow$ & 0.000 & 0.000\\
+            & PSNR $\uparrow$ & 20.156 & \textbf{21.256}\\
+            & SSIM $\uparrow$ & 0.533 & 0.533\\
+            \midrule
+            \multirow{3}{*}{TbD} & TIoU $\uparrow$ & 0.000 & 0.000 \\
+            & PSNR $\uparrow$ & 20.262 & \textbf{20.947} \\
+            & SSIM $\uparrow$ & 0.471 & \textbf{0.511}\\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \samples{falling-objs}{Falling Objects}
+    \samples{tbd-3d}{TbD-3D}
+    \samples{tbd}{TbD}
+
+    % TODO: Specify that this is re-implemented DeFMO
+    As we can see, our approach performs better than DeFMO in the TbD-3D and TbD datasets.
+    In the Falling Objects dataset, it falls short of DeFMO.\@
+    This is presumably because of insufficient training for our model (\oursepochs{} epochs for ours vs \defmoepochs{} epochs for DeFMO, as shown in Table~\ref{tab:hyper-params}), although neither model is trained till convergence (due to lack of time).
+    Both models get 0.000 TIoU, further reinforcing the previous remark.
+
+    Further, due to memory limitations, the maximum batch size achievable for our approach was \oursbatchsize, lower than that for DeFMO (which is \defmobatchsize).
+    Since we build upon ResNet-18, which uses batch normalization, lower batch sizes impact accuracy.
+    Hence, with more time and more GPU memory, our approach should outperform DeFMO.\@
+
+\subsection{Memory optimizations}
+    The memory savings due to techniques in Section~\ref{sec:mem-opt} are shown in Table~\ref{tab:mem-opt}.
+    Memory usage is calculated using a custom wrapper around the NVIDIA System Management Interface~\citep{nvidia-smi} (\texttt{nvidia-smi}) tool, which is included with NVIDIA's GPU drivers.
+    Here, the training is stopped after two gradient steps.
+    Also, all hyper-parameters are the same as in Table~\ref{tab:hyper-params}, except for batch size, which is 5.
+
+    \begin{table}
+        \caption{
+            Ablation study for memory usage (in MiB) across both approaches during training on a single GPU.\@
+            We use gradient checkpointing with 2 segments over the encoder and renderer separately.
+        }%
+        \label{tab:mem-opt}
+        \begin{tabular}{lrrrr}
+            \toprule
+            \multirow{2}[2]{*}{Technique} & \multicolumn{4}{c}{Approach}\\
+            \cmidrule(lr){2-5}
+            & DeFMO & $+ D_S$ & $+ D_T$ & $+ D_S, D_T$\\
+            \midrule
+            None & 2413 & 6351 & 6211 & 10023\\
+            Gradient checkpointing (GC) & 2121 & 5933 & 5965 & 9803\\
+            Mixed precision (MP) & 1807 & 4003 & 3997 & 6073\\
+            GC + MP & \textbf{1667} & \textbf{3909} & \textbf{3835} & \textbf{5991}\\
+            \bottomrule
+        \end{tabular}
+        \centering
+    \end{table}
+
+    Evidently, our model consumes much more memory than DeFMO.\@
+    However, the gap can be reduced considerably by both gradient checkpointing and mixed precision.
+    While both significantly reduce memory usage, mixed precision gives a larger improvement.
+
+\subsection{Code quality}
+    Code quality is assessed using Cyclomatic Complexity~\citep{mccabe} (CC), Halstead~\citep{halstead} difficulty and delivered bugs, and the Maintainability Index~\citep{mi-original,mi-revision} (MI).
+    These were calculated using the open source tool Radon~\citep{radon} on the current source code (as of commit \texttt{cc4a28106ca0332e8cbca17504ff6691288578a7}) and the original DeFMO repository (at the commit it was forked: \texttt{30c5af80e49c96d39090c4b51541cd6801d2934a}), excluding the code for rendering the synthetic dataset.
+    The extrema and average values of these metrics are presented in Table~\ref{tab:radon}.
+
+    \begin{table}
+        \caption{Code quality comparison between original DeFMO and this project.}%
+        \label{tab:radon}
+        \centering
+        \begin{tabular}{lrrrrrrrr}
+            \toprule
+            \multirow{2}[2]{*}{Approach} & \multicolumn{2}{c}{CC $\downarrow$} & \multicolumn{2}{c}{Difficulty $\downarrow$} & \multicolumn{2}{c}{Bugs $\downarrow$} & \multicolumn{2}{c}{MI $\uparrow$}\\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
+            & Avg & Max & Avg & Max & Avg & Max & Avg & Min\\
+            \midrule
+            DeFMO & 4.647 & 78 & 7.030 & 13.852 & 0.480 & 2.228 & 44.89 & 8.19\\
+            Ours & \textbf{3.349} & \textbf{15} & \textbf{5.149} & \textbf{9.960} & \textbf{0.209} & \textbf{0.589} & \textbf{48.86} & \textbf{23.24}\\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    As we can see, the refactoring done on the code base has significant improvement over the previous state, especially when considering the extrema of these metrics.

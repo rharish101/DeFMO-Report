@@ -1,0 +1,10 @@
+\section{Conclusion}
+
+We proposed an improved version of DeFMO that uses GANs to overcome its problems with biased losses.
+We also proposed a novel loss function to capture smooth movement across sub-frames.
+This method can also generalize better to other related applications, like temporal super-resolution, due to more general loss functions.
+% TODO: Explain that this is referring to the re-implementation of DeFMO
+Experimental results show that the proposed model performs better than DeFMO on their benchmark, but at the cost of higher memory usage during training.
+We also implement popular memory optimization techniques and refactor the codebase to make is easier to use, maintain, and extend the approach.
+% TODO: Explain that achieving SoTA is due to beating original DeFMO, not re-implemented DeFMO
+For future work, one can train the model on full resolution images with sufficient compute to possibly achieve state-of-the-art results.

@@ -1,0 +1,26 @@
+\section{Introduction}
+
+Motion blur is a challenging problem in computer vision.
+It occurs when moving objects are captured with long exposures.
+This leads to a loss of information in images, and thus algorithms for deblurring are pursued.
+Deblurring motion blur due to fast moving objects~\citep{fmo} (FMOs) is a challenging subset of this task, and it is necessary for tracking FMOs such as in ball-based sports, free-falling objects, high-speed cars, etc.
+
+% TODO:
+% * Cite all other deblurring papers
+% * Extend into proper literature review
+Various deep learning approaches have been proposed to tackle FMO blur.
+\citet{defmo} proposed an algorithm known as DeFMO, that uses a convolutional encoder-decoder architecture to deblur individual images by generating sub-frames that depict the motion of the FMO.\@
+The model is trained in a supervised learning setting with a wide variety of losses for good performance.
+
+While these losses lead to good performance on various datasets, they might not be optimal for the best performance.
+Here, we aim to replace these hand-engineered losses with neural networks that can learn a loss function for training the base model.
+For this, we use Generative Adversarial Networks~\citep{gan} (GANs).
+
+The \textbf{contributions} of this project are:
+\begin{itemize}
+    \item Improvement of the DeFMO model's outputs using GANs.
+    \item A novel learned loss function for temporal frame consistency.
+    \item A generalized approach over DeFMO for any task that involves video super-resolution.
+    \item Optimizations for more efficient memory management during training.
+    \item Refactoring and code quality enforcement over the DeFMO codebase.
+\end{itemize}

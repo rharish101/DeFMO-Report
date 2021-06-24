@@ -1,0 +1,122 @@
+\section{Experiments}
+
+\subsection{Dataset}
+    The models are trained on the synthetic dataset introduced by \citet{defmo}, due to lack of a large and diverse real-world annotated dataset with FMOs.
+    Each synthetic image consists of an \textit{object}, a 6D \textit{trajectory}, and a \textit{background} frame.
+    \textit{Objects} are sampled from 3D models of the 50 largest classes in the ShapeNet~\citep{shapenet} dataset.
+    \textit{Trajectories} are sampled uniformly as a combination of 3D linear translations and 3D rotations.
+    \textit{Backgrounds} are sampled from the VOT~\citep{vot} sequences for training, and from Sports-1M~\citep{sports-1m} for validation.
+
+    For evaluation, the models are evaluated on several datasets using the open source FMO deblurring benchmark introduced by \citet{defmo} using ideas taken from \citet{fmo}.
+    It includes the Falling Objects~\citep{falling-objs}, TbD-3D~\citep{tbd-3d}, and TbD~\citep{tbd} datasets.
+
+\subsection{Architecture}
+    % TODO: Explain changes in re-implemented DeFMO over original DeFMO (ResNet-18 over ResNet-50)
+    The encoder and both discriminators have the ResNet-18~\citep{resnet} architecture (up to and excluding the global average pooling layer), and their weights are initialized with a model pre-trained on ImageNet~\citep{imagenet}.
+    Thus, the latent space is of 512 dimensions (due to ResNet-18).
+    The parameters of the first layer are adapted to the no.\ of channels in the inputs by duplicating the pre-trained weights.
+
+    The discriminators use spectral normalization~\citep{spectral-norm} to stabilize training, and to enforce the 1-Lipschitz constraint for the Wasserstein loss~\citep{wgan} in the GAN sharpness loss.
+    $D_S$ has a convolution layer without any non-linearity after the ResNet-18 backbone, after which global average pooling combines the patch predictions into a single scalar.
+    Here, since ResNet-18 downsamples the input images by 32, therefore the patch size will be $(\lceil H/32 \rceil, \lceil W/32 \rceil)$.
+    $D_T$ keeps the global average pooling layer after the ResNet-18 backbone, and adds a fully-connected layer with sigmoid activation on top of the pooling layer with a scalar output.
+
+    The renderer is a standard CNN with batch normalization~\citep{batch-norm} and ReLU~\citep{relu}.
+    Additionally, it uses the ResNet bottleneck along with pixel shuffling~\citep{pixelshuffle} for upsampling.
+    The exact architecture is shown in Table~\ref{tab:renderer-arch}.
+
+    \begin{table}
+        \caption{
+            Architecture of the renderer.
+            Parameter values correspond to those used in PyTorch v1.8 for the corresponding layers.
+        }%
+        \label{tab:renderer-arch}
+        \centering
+        \begin{tabular}{llll}
+            \toprule
+            Layer & Channels & Kernel size & Stride\\
+            \midrule
+            Conv2d & 1024 & 3 & 1\\
+            BatchNorm2d & 1024\\
+            ReLU\\
+            ResNet bottleneck & 256\\
+            PixelShuffle &&& 2\\
+            ResNet bottleneck & 64\\
+            PixelShuffle &&& 2\\
+            ResNet bottleneck & 16\\
+            PixelShuffle &&& 2\\
+            Conv2d & 16 & 3 & 1\\
+            PixelShuffle &&& 2\\
+            Conv2d & 4 & 3 & 1\\
+            ReLU\\
+            Conv2d & 4 & 3 & 1\\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+\subsection{Setup}
+    The models are trained using the Adam~\citep{adam} optimizer.
+    There is one optimizer for the main model (encoder and renderer), one for $D_S$ and one for $D_T$.
+    Optimization steps for $D_S$, $D_T$, and the main model are taken alternately.
+    Step-wise learning rate decay is applied for all optimizers.
+
+    The code was written in Python using the PyTorch~\citep{pytorch} library.
+    It was run on a cluster that uses CUDA~\citep{cuda} on three NVIDIA GeForce\textsuperscript{\textregistered} GPUs with 11 GiB memory for accelerating PyTorch.
+
+    Hyper-parameters were manually chosen --- no hyper-parameter search procedure was used.
+    Their values are shown in Table~\ref{tab:hyper-params}.
+
+    % TODO: Make sure that most terms in brackets are referred to previously
+    \begin{table}
+        \caption{
+            Hyper-parameter values used for all approaches.
+            Any missing values are assumed to have the defaults as in PyTorch v1.8.
+            Hyphen denote that values aren't applicable.
+        }%
+        \label{tab:hyper-params}
+        \centering
+        \begin{tabular}{lrr}
+            \toprule
+            \multirow{2}[2]{*}{Name} & \multicolumn{2}{c}{Approach}\\
+            \cmidrule(lr){2-3}
+            & DeFMO & Ours\\
+            \midrule
+            Epochs & \defmoepochs{} & \oursepochs\\
+            Batch size & \defmobatchsize{} & \oursbatchsize\\
+            Input resolution & 128$\times$128 & 128$\times$128\\
+            Number of sub-frames $N$ & 24 & 24\\
+            Learning rate (main model) & 0.001 & 0.001\\
+            Learning rate ($D_S$) & - & 0.00001\\%chktex 8
+            Learning rate ($D_T$) & - & 0.00005\\%chktex 8
+            Learning rate decay rate (all schedulers) & 0.5 & 0.5\\
+            Learning rate decay step size (all schedulers) & 10 & 10\\
+            $D_S$ steps per main model step & - & 1\\%chktex 8
+            $D_T$ steps per main model step & - & 2\\%chktex 8
+            Image reconstruction loss weight $\alpha_I$ & 1.0 & 1.0\\
+            % TODO: These losses aren't used in new method
+            Time-consistency loss weight $\alpha_T$ & 1.0 & 1.0\\
+            Sharpness loss weight $\alpha_S$ & 1.0 & 1.0\\
+            Latent learning loss weight $\alpha_L$ & 1.0 & 1.0\\
+            GAN sharpness loss weight $\alpha_G$ & - & 1.0\\%chktex 8
+            NN-based time-consistency loss weight $\alpha_N$ & - & 0.05\\%chktex 8
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+\subsection{Memory optimizations}\label{sec:mem-opt}
+    A disadvantage of our approach is that the addition of discriminators increases compute and memory usage significantly.
+    Therefore, we adopt a few techniques to reduce the GPU memory impact.
+
+    \paragraph{Gradient checkpointing}
+    This technique trades computation for lower memory usage.
+    \citet{grad-ckpt} introduce gradient checkpointing, an algorithm that can train an $n$ layer network with $\mathcal{O}(\sqrt(n))$ memory cost.
+    Simply put, it replaces intermediate activations by `checkpoints'.
+    When a checkpoint is later needed during back-propagation, the activations are recomputed.
+    Thus, the memory savings come at the cost of extra forward passes per mini-batch.
+
+    \paragraph{Mixed precision training}
+    This technique trades accuracy for faster computation and lower memory usage.
+    Training networks using 32-bit single-precision floating points is typically more compute- and memory-intensive than 16-bit half-precision floats.
+    However, using half-precision may lead to training instability due to underflow in gradients.
+    \citet{amp} introduce mixed-precision training, a technique that uses half-precision for all computations that aren't sensitive to precision, and single-precision otherwise.
+    To avoid underflow in gradients, it also scales losses before calculating gradients, and unscales the gradients when applying them.
