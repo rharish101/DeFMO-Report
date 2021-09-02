@@ -1,12 +1,10 @@
 \section{Proposed approach}
 
-\subsection{GANs}
-    % TODO: Explain GANs independent of DeFMO
-    We use GANs to replace the sharpness loss.
+\subsection{Generative Adversarial Networks}
+    We use Generative Adversarial Networks (GANs) to replace the sharpness loss.
     In the GAN framework, there are two models, a generator and a discriminator, that compete against each other in a zero-sum game.
     The goal is to train the generator to generate data when given a dataset, in an unsupervised learning setting.
-    % TODO: Why using 'ground-truth' in an unsupervised learning setup?
-    The discriminator has to distinguish between the generator's outputs and the ground-truth from the dataset.
+    The discriminator has to distinguish between the generator's outputs and the data points from the dataset.
     At convergence, we expect the generator to be able to successfully fool the discriminator by learning to generate data that is indistinguishable from the dataset.
 
     \paragraph{Patch discriminators}
@@ -53,6 +51,7 @@
         \item It is general enough to be used in other tasks involving fine-grained image details.
     \end{itemize}
 
+% TODO: Add/replace with contrastive learning loss
 \subsection{Time-consistency loss}
     Here, we modify the objective for the discriminator to distinguish between consecutive frames and random frames.
     The input to this discriminator $D_T$ is a pair of RGBA images $R_1, R_2 \in \mathbb{R}^{H \times W \times 4}$ with each RGBA image having the same structure and representation as the outputs of the generator.
@@ -85,4 +84,8 @@
         \label{fig:temp-nn-arch}
     \end{figure}
 
-% TODO: Explain how the new total loss is
+\subsection{Updated Loss}
+    Using both the updated sharpness loss ($\mathcal{L}_G$ instead of $\mathcal{L}_S$) and the updated time-consistency loss ($\mathcal{L}_N$ instead of $\mathcal{L}_T$), we change the total loss to:
+    \begin{equation}
+        \mathcal{L}_{\mathrm{ours}} = \mathcal{L}_F + \alpha_I \mathcal{L}_I + \alpha_N \mathcal{L}_N + \alpha_G \mathcal{L}_G + \alpha_L \mathcal{L}_L
+    \end{equation}

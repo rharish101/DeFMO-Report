@@ -11,7 +11,6 @@
     It includes the Falling Objects~\citep{falling-objs}, TbD-3D~\citep{tbd-3d}, and TbD~\citep{tbd} datasets.
 
 \subsection{Architecture}
-    % TODO: Explain changes in re-implemented DeFMO over original DeFMO (ResNet-18 over ResNet-50)
     The encoder and both discriminators have the ResNet-18~\citep{resnet} architecture (up to and excluding the global average pooling layer), and their weights are initialized with a model pre-trained on ImageNet~\citep{imagenet}.
     Thus, the latent space is of 512 dimensions (due to ResNet-18).
     The parameters of the first layer are adapted to the no.\ of channels in the inputs by duplicating the pre-trained weights.
@@ -54,6 +53,10 @@
         \end{tabular}
     \end{table}
 
+    We compare our proposed approach to our re-implementation of DeFMO.\@
+    Here, we reduce the number of parameters in DeFMO by swapping ResNet-50 for ResNet-18 in the encoder and by appropriately reducing the number of neurons in the first layer of the decoder.
+    Then, we re-train the model with a different set of hyper-parameters.
+
 \subsection{Setup}
     The models are trained using the Adam~\citep{adam} optimizer.
     There is one optimizer for the main model (encoder and renderer), one for $D_S$ and one for $D_T$.
@@ -66,10 +69,9 @@
     Hyper-parameters were manually chosen --- no hyper-parameter search procedure was used.
     Their values are shown in Table~\ref{tab:hyper-params}.
 
-    % TODO: Make sure that most terms in brackets are referred to previously
     \begin{table}
         \caption{
-            Hyper-parameter values used for all approaches.
+            Hyper-parameter values used for our re-implementation of DeFMO and our proposed approach.
             Any missing values are assumed to have the defaults as in PyTorch v1.8.
             Hyphen denote that values aren't applicable.
         }%
@@ -79,12 +81,12 @@
             \toprule
             \multirow{2}[2]{*}{Name} & \multicolumn{2}{c}{Approach}\\
             \cmidrule(lr){2-3}
-            & DeFMO & Ours\\
+            & DeFMO (ours) & Proposed\\
             \midrule
             Epochs & \defmoepochs{} & \oursepochs\\
             Batch size & \defmobatchsize{} & \oursbatchsize\\
             Input resolution & 128$\times$128 & 128$\times$128\\
-            Number of sub-frames $N$ & 24 & 24\\
+            Number of sub-frames ($N$) & 24 & 24\\
             Learning rate (main model) & 0.001 & 0.001\\
             Learning rate ($D_S$) & - & 0.00001\\%chktex 8
             Learning rate ($D_T$) & - & 0.00005\\%chktex 8
@@ -92,13 +94,12 @@
             Learning rate decay step size (all schedulers) & 10 & 10\\
             $D_S$ steps per main model step & - & 1\\%chktex 8
             $D_T$ steps per main model step & - & 2\\%chktex 8
-            Image reconstruction loss weight $\alpha_I$ & 1.0 & 1.0\\
-            % TODO: These losses aren't used in new method
-            Time-consistency loss weight $\alpha_T$ & 1.0 & 1.0\\
-            Sharpness loss weight $\alpha_S$ & 1.0 & 1.0\\
-            Latent learning loss weight $\alpha_L$ & 1.0 & 1.0\\
-            GAN sharpness loss weight $\alpha_G$ & - & 1.0\\%chktex 8
-            NN-based time-consistency loss weight $\alpha_N$ & - & 0.05\\%chktex 8
+            Image reconstruction loss weight ($\alpha_I$) & 1.0 & 1.0\\
+            Time-consistency loss weight ($\alpha_T$) & 1.0 & -\\
+            Sharpness loss weight ($\alpha_S$) & 1.0 & -\\
+            Latent learning loss weight ($\alpha_L$) & 1.0 & 1.0\\
+            GAN sharpness loss weight ($\alpha_G$) & - & 1.0\\%chktex 8
+            NN-based time-consistency loss weight ($\alpha_N$) & - & 0.05\\%chktex 8
             \bottomrule
         \end{tabular}
     \end{table}

@@ -5,10 +5,8 @@ It occurs when moving objects are captured with long exposures.
 This leads to a loss of information in images, and thus algorithms for deblurring are pursued.
 Deblurring motion blur due to fast moving objects~\citep{fmo} (FMOs) is a challenging subset of this task, and it is necessary for tracking FMOs such as in ball-based sports, free-falling objects, high-speed cars, etc.
 
-% TODO:
-% * Cite all other deblurring papers
-% * Extend into proper literature review
-Various deep learning approaches have been proposed to tackle FMO blur.
+% TODO: Extend into proper literature review
+Various deep learning approaches~\citep{deblurgan-v2,deblur-real-blur,deblur-deep-prior,dynamic-scene-deblur,phase-only-kernel,vid-from-single-img} have been proposed to tackle motion blur.
 \citet{defmo} proposed an algorithm known as DeFMO, that uses a convolutional encoder-decoder architecture to deblur individual images by generating sub-frames that depict the motion of the FMO.\@
 The model is trained in a supervised learning setting with a wide variety of losses for good performance.
 

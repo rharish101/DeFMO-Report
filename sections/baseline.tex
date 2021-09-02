@@ -14,8 +14,7 @@ For this, \citet{blatting-1,blatting-2} introduce the blurring and matting (blat
 Here, $F$ is the sharp foreground appearance of the object, $M$ is the segmentation mask, and $H$ is the blur kernel.
 $H$ identifies the object's trajectory such that $||H|| = 1$.
 
-% DeFMO doesn't approximate, it generalizes it
-DeFMO approximates this with the following model:
+DeFMO generalizes this with the following model:
 \begin{equation}
     I_{t_0:t_1} = \int_{t_0}^{t_1} F_t M_t dt + \left( 1 - \int_{t_0}^{t_1} M_t dt \right) B \label{eq:defmo-blatting}
 \end{equation}
@@ -39,9 +38,8 @@ An illustration of the architecture is shown in Figure~\ref{fig:defmo-arch}.
     DeFMO uses a wide variety of losses to optimize the model.
     These consist of the output reconstruction loss ($\mathcal{L}_F$), the input reconstruction loss (based on Equation~\ref{eq:defmo-blatting}) ($\mathcal{L}_I$), and losses to constraint the output to have smooth movements in time ($\mathcal{L}_T$), sharp objects ($\mathcal{L}_S$), and invariance to the background ($\mathcal{L}_L$).
     Therefore, the total loss is a weighted sum of these losses:
-    % TODO: Add subscript to total loss, because this is DeFMO's total loss, not our total loss
     \begin{equation}
-        \mathcal{L} = \mathcal{L}_F + \alpha_I \mathcal{L}_I + \alpha_T \mathcal{L}_T + \alpha_S \mathcal{L}_S + \alpha_L \mathcal{L}_L
+        \mathcal{L}_{\mathrm{DeFMO}} = \mathcal{L}_F + \alpha_I \mathcal{L}_I + \alpha_T \mathcal{L}_T + \alpha_S \mathcal{L}_S + \alpha_L \mathcal{L}_L
     \end{equation}
 
     \paragraph{Appearance reconstruction loss}
@@ -72,9 +70,8 @@ An illustration of the architecture is shown in Figure~\ref{fig:defmo-arch}.
     \paragraph{Image reconstruction loss}
     $\mathcal{L}_I$ is just an application of the blatting equation in Equation~\ref{eq:defmo-blatting}.
     Thus, this loss is just the $\mathcal{L}_1$ loss between the blatted image and the input image $I$:
-    % TODO: L1 loss is a norm, so don't use comma
     \begin{equation}
-        \mathcal{L}_I({\{ R_t \}}_1^N, I) = {\left|\left| I, \frac{1}{N} \sum_{t=1}^N F_t M_t + \left( 1 - \frac{1}{N} \sum_{t=1}^N M_t \right) B \right|\right|}_1
+        \mathcal{L}_I({\{ R_t \}}_1^N, I) = {\left|\left| \frac{1}{N} \sum_{t=1}^N F_t M_t + \left( 1 - \frac{1}{N} \sum_{t=1}^N M_t \right) B - I \right|\right|}_1
     \end{equation}
 
     \paragraph{Time-consistency loss}
@@ -82,9 +79,8 @@ An illustration of the architecture is shown in Figure~\ref{fig:defmo-arch}.
     Informally, we want the sub-frames for nearby $t$ to be similar to each other.
     This similarity is formalized by the maximum value of the normalized cross-correlation over all pixels.
     Thus, the loss is:
-    % TODO: It's N-1, not N, because t+1 for N doesn't exist
     \begin{equation}
-        \mathcal{L}_T({\{R_t\}}_1^N) = 1 - \frac{1}{N} \sum_{t=1}^N \mathrm{maxncc}(R_t, R_{t+1})
+        \mathcal{L}_T({\{R_t\}}_1^N) = 1 - \frac{1}{N-1} \sum_{t=1}^{N-1} \mathrm{maxncc}(R_t, R_{t+1})
     \end{equation}
 
     \paragraph{Sharpness loss}

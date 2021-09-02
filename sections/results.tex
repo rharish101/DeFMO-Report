@@ -9,7 +9,7 @@
         \hfill
         \begin{subfigure}{0.79\textwidth}
             \setlength{\abovecaptionskip}{1mm}
-            \foreach [count=\i from 1] \method/\name in {GT/gt,DeFMO/old,Ours/new}{%chktex 1
+            \foreach [count=\i from 1] \method/\name in {GT/gt,DeFMO/old,Proposed/new}{%chktex 1
                 \begin{subfigure}{\textwidth}
                     \rotatebox{90}{\method}
                     \foreach \j in {0,...,7}{%chktex 1,chktex 11
@@ -30,39 +30,37 @@
 \section{Results}
 
 \subsection{Benchmark results}
-    The FMO deblurring benchmark evaluates the models using peak signal-to-noise ratio (PSNR), structural similarity index measure~\citep{ssim} (SSIM), and intersection over union averaged over the trajectory~\citep{tiou} (TIoU).
+    We use the FMO deblurring benchmark to evaluate our proposed model and our re-implementation of DeFMO using peak signal-to-noise ratio (PSNR), structural similarity index measure~\citep{ssim} (SSIM), and intersection over union averaged over the trajectory~\citep{tiou} (TIoU).
     Here, both methods use a median of the previous five frames as the background.
     The results for this benchmark are shown in Table~\ref{tab:benchmark}.
     Image samples on the Falling Objects, TbD-3D and TbD datasets are shown in figures \ref{fig:falling-objs-samples}, \ref{fig:tbd-3d-samples} and \ref{fig:tbd-samples} respectively.%chktex 2
 
-    % TODO:
-    % * Specify that this is the re-implemented DeFMO
-    % * Specify metrics for original DeFMO
-    % * Do ablation study
+    % TODO: Do ablation study
     \begin{table}
         \caption{
             Evaluation on the FMO deblurring benchmark.
             The datasets are sorted top-to-bottom by decreasing difficulty: arbitrary shaped and textured~\citep{falling-objs}, mostly spherical but textured~\citep{tbd-3d}, and mostly spherical and uniformly coloured objects~\citep{tbd}.
+            We provide metrics for the original implementation of DeFMO sourced from \citet{defmo} for reference.
         }%
         \label{tab:benchmark}
         \centering
-        \begin{tabular}{llrr}
+        \begin{tabular}{llrrr}
             \toprule
-            \multirow{2}[2]{*}{Dataset} & \multirow{2}[2]{*}{Metric} & \multicolumn{2}{c}{Approach}\\
-            \cmidrule(lr){3-4}
-            && DeFMO & Ours\\
+            \multirow{2}[2]{*}{Dataset} & \multirow{2}[2]{*}{Metric} & \multicolumn{3}{c}{Approach}\\
+            \cmidrule(lr){3-5}
+            && DeFMO (original) & DeFMO (ours) & Proposed\\
             \midrule
-            \multirow{3}{*}{Falling Objects} & TIoU $\uparrow$ & 0.000 & 0.000\\
-            & PSNR $\uparrow$ & \textbf{22.794} & 22.064\\
-            & SSIM $\uparrow$ & \textbf{0.608} & 0.604\\
+            \multirow{3}{*}{Falling Objects} & TIoU $\uparrow$ & 0.703 & 0.000 & 0.000\\
+            & PSNR $\uparrow$ & 26.80 & \textbf{22.79} & 22.06\\
+            & SSIM $\uparrow$ & 0.752 & \textbf{0.608} & 0.604\\
             \midrule
-            \multirow{3}{*}{TbD-3D} & TIoU $\uparrow$ & 0.000 & 0.000\\
-            & PSNR $\uparrow$ & 20.156 & \textbf{21.256}\\
-            & SSIM $\uparrow$ & 0.533 & 0.533\\
+            \multirow{3}{*}{TbD-3D} & TIoU $\uparrow$ & 0.850 & 0.000 & 0.000\\
+            & PSNR $\uparrow$ & 26.23 & 20.16 & \textbf{21.26}\\
+            & SSIM $\uparrow$ & 0.699 & 0.533 & 0.533\\
             \midrule
-            \multirow{3}{*}{TbD} & TIoU $\uparrow$ & 0.000 & 0.000 \\
-            & PSNR $\uparrow$ & 20.262 & \textbf{20.947} \\
-            & SSIM $\uparrow$ & 0.471 & \textbf{0.511}\\
+            \multirow{3}{*}{TbD} & TIoU $\uparrow$ & 0.583 & 0.000 & 0.000 \\
+            & PSNR $\uparrow$ & 25.54 & 20.26 & \textbf{20.95} \\
+            & SSIM $\uparrow$ & 0.599 & 0.471 & \textbf{0.511}\\
             \bottomrule
         \end{tabular}
     \end{table}
@@ -71,14 +69,13 @@
     \samples{tbd-3d}{TbD-3D}
     \samples{tbd}{TbD}
 
-    % TODO: Specify that this is re-implemented DeFMO
-    As we can see, our approach performs better than DeFMO in the TbD-3D and TbD datasets.
+    As we can see, our approach performs better than our re-implementation of DeFMO in the TbD-3D and TbD datasets.
     In the Falling Objects dataset, it falls short of DeFMO.\@
     This is presumably because of insufficient training for our model (\oursepochs{} epochs for ours vs \defmoepochs{} epochs for DeFMO, as shown in Table~\ref{tab:hyper-params}), although neither model is trained till convergence (due to lack of time).
     Both models get 0.000 TIoU, further reinforcing the previous remark.
 
-    Further, due to memory limitations, the maximum batch size achievable for our approach was \oursbatchsize, lower than that for DeFMO (which is \defmobatchsize).
-    Since we build upon ResNet-18, which uses batch normalization, lower batch sizes impact accuracy.
+    Further, due to memory limitations, the maximum batch size achievable for our approach was \oursbatchsize, lower than that for our re-implementation of DeFMO (which is \defmobatchsize).
+    Since we build upon ResNet, which uses batch normalization, lower batch sizes impact accuracy.
     Hence, with more time and more GPU memory, our approach should outperform DeFMO.\@
 
 \subsection{Memory optimizations}
@@ -128,7 +125,7 @@
             & Avg & Max & Avg & Max & Avg & Max & Avg & Min\\
             \midrule
             DeFMO & 4.647 & 78 & 7.030 & 13.852 & 0.480 & 2.228 & 44.89 & 8.19\\
-            Ours & \textbf{3.349} & \textbf{15} & \textbf{5.149} & \textbf{9.960} & \textbf{0.209} & \textbf{0.589} & \textbf{48.86} & \textbf{23.24}\\
+            Proposed & \textbf{3.349} & \textbf{15} & \textbf{5.149} & \textbf{9.960} & \textbf{0.209} & \textbf{0.589} & \textbf{48.86} & \textbf{23.24}\\
             \bottomrule
         \end{tabular}
     \end{table}
